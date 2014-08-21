@@ -1,6 +1,6 @@
 # Online auction bid library - using Scala and sbt #
 
-A backend library for auction house for their online auction system so it supports the following operations (assume that we have a in memory key-value store lib and a unique id generator available)
+A backend library for auction house for their online auction system so it supports the following operations (assuming that we have a in memory key-value store lib and a unique id generator available)
  
 * Auctioneer adds an item that can be auctioned. An item has a unique name and reserved price
  
