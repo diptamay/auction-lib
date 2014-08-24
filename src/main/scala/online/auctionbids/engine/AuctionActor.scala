@@ -1,28 +1,43 @@
 package online.auctionbids.engine
 
-import akka.actor.Actor
+import akka.actor.SupervisorStrategy.Stop
+import akka.actor.{Actor, ActorLogging}
+import online.auctionbids.engine.KVStore.auctions
 import org.joda.time.DateTime
-
-import scala.collection.mutable
 
 /**
  * @author Diptamay Sanyal
  * @version 1.0
  */
-class AuctionActor extends Actor {
+class AuctionActor extends Actor with ActorLogging {
 
-  type KVStore[K, V] = mutable.Map[K, V]
-  val auctions: KVStore[String, Auction] = mutable.Map()
+  def invokeCommand[A](callCommand: => A) = {
+    val reply = callCommand
+    log.debug(s"Sending $reply to $sender()")
+    sender() ! reply
+  }
 
   def receive: Receive = {
-    case Add(item, auctioneer) => sender() ! addAuction(item, auctioneer)
-    case Start(item, auctioneer) => sender() ! startAuction(item, auctioneer)
-    case Call(item, auctioneer) => sender() ! callAuction(item, auctioneer)
-    case Inquire(item, bidderOpt) => sender() ! inquire(item, bidderOpt)
-    case Offer(auction, bid, bidder) => sender() ! offerBid(auction, bid, bidder)
+    case Add(item, auctioneer) => invokeCommand {
+      addAuction(item, auctioneer)
+    }
+    case Start(item, auctioneer) => invokeCommand {
+      startAuction(item, auctioneer)
+    }
+    case Call(item, auctioneer) => invokeCommand {
+      callAuction(item, auctioneer)
+    }
+    case Inquire(item, bidderOpt) => invokeCommand {
+      inquire(item, bidderOpt)
+    }
+    case Offer(auction, bid, bidder) => invokeCommand {
+      offerBid(auction, bid, bidder)
+    }
+    case _ => log.warning("Unknown message")
   }
 
   def inquire(item: Item, bidderOpt: Option[Bidder] = None): AuctionReply = {
+    log.debug(s"Inquiring $item")
     val auctionOpt = auctions.get(item.name)
     val reply = auctionOpt match {
       case Some(auction) if bidderOpt != None && auction.highestBidder != None && auction.highestBidder.get == bidderOpt.get =>
@@ -42,17 +57,21 @@ class AuctionActor extends Actor {
   }
 
   def addAuction(item: Item, auctioneer: Auctioneer): AuctionReply = {
+    log.debug(s"$auctioneer adding $item for auctioning")
     val auctionOpt = auctions.get(item.name)
     val reply = auctionOpt match {
       case Some(auction) => inquire(auction.item)
       case None =>
-        auctions += (item.name -> Auction(item.copy(), auctioneer))
+        val newItem = item.copy()
+        auctions += (item.name -> Auction(newItem, auctioneer))
+        log.info(s"*** ADDED $newItem TO AUCTIONS ***")
         Status(auctions.get(item.name).get.copy())
     }
     reply
   }
 
   def startAuction(item: Item, auctioneer: Auctioneer): AuctionReply = {
+    log.debug(s"$auctioneer starting auction for $item")
     var auctionOpt = auctions.get(item.name)
     val reply = auctionOpt match {
       case Some(auction) if auction.auctioneer == auctioneer && auction.status == AuctionStatus.NotStarted =>
@@ -65,6 +84,7 @@ class AuctionActor extends Actor {
   }
 
   def callAuction(item: Item, auctioneer: Auctioneer): AuctionReply = {
+    log.debug(s"$auctioneer ending auction for $item")
     val auctionOpt = auctions.get(item.name)
     val reply = auctionOpt match {
       case Some(auction) if auction.auctioneer == auctioneer && auction.status == AuctionStatus.Running =>
@@ -80,15 +100,17 @@ class AuctionActor extends Actor {
   }
 
   def offerBid(item: Item, bid: Double, bidder: Bidder): AuctionReply = {
+    log.debug(s"$bidder bidding for $item with bid $bid")
     val auctionOpt = auctions.get(item.name)
     val reply = auctionOpt match {
       case Some(auction) =>
         auction.status match {
-          case AuctionStatus.Running if bid > auction.highestBid.get =>
+          case AuctionStatus.Running if auction.highestBid != None && bid > auction.highestBid.get =>
             auctions += (auction.item.name -> auction.copy(highestBid = Option(bid), highestBidder = Option(bidder)))
             BestOffer(auction.copy())
-          case AuctionStatus.Running if bid <= auction.highestBid.get =>
-            LowOffer(auction.copy(highestBidder = None))
+          case AuctionStatus.Running if bid > AuctionConfig.MIN_BID_VALUE =>
+            auctions += (auction.item.name -> auction.copy(highestBid = Option(bid), highestBidder = Option(bidder)))
+            BestOffer(auction.copy())
           case _ => inquire(item, Option(bidder))
         }
       case _ => inquire(item, Option(bidder))

@@ -16,39 +16,40 @@ case object CallAuction
 
 class AuctioneerActor(actorSystem: ActorSystem, auctioneer: Auctioneer, item: Item) extends Actor with ActorLogging {
 
-  val random = new scala.util.Random
+  val random       = new scala.util.Random
   val auctionActor = actorSystem.actorOf(Props[AuctionActor])
 
   def receive: Receive = {
     case AuctionItem =>
-      log.info(s"Auctioning $item")
+      log.info(s"$auctioneer auctioning $item")
       auctionActor ! Add(item, auctioneer)
     case StartAuction =>
-      log.info(s"Starting auction for $item")
+      log.info(s"$auctioneer starting auction for $item")
       auctionActor ! Start(item, auctioneer)
     case CallAuction =>
-      log.info(s"Calling auction for $item")
+      log.info(s"$auctioneer calling auction for $item")
       auctionActor ! Call(item, auctioneer)
     case Status(auction) =>
-      log.info(s"State of auction is $auction")
       auction.status match {
         case AuctionStatus.NotStarted =>
           Thread.sleep(1 + random.nextInt(AuctionConfig.AUCTION_START_DELAY))
-          log.info(s"Starting auction for $item")
+          log.info(s"$auctioneer starting auction for $item")
           auctionActor ! Start(item, auctioneer)
         case AuctionStatus.Running =>
           val seconds = Seconds.secondsBetween(DateTime.now(), auction.startedAt.get).getSeconds
           if (seconds < AuctionConfig.AUCTION_DURATION) {
             Thread.sleep(1 + random.nextInt(AuctionConfig.AUCTION_CHECK_DELAY))
-            log.info(s"Inquire auction for $item")
+            log.info(s"$auctioneer inquiring for $item")
             auctionActor ! Inquire(auction.item)
           } else {
-            log.info(s"Calling auction for $item")
+            log.info(s"$auctioneer calling auction for $item")
             auctionActor ! Call(item, auctioneer)
           }
         case _ =>
+          log.info(s"State of auction is $auction")
           context.stop(self)
       }
-    case NotFound => context.stop(self)
+    case NotFound => auctionActor ! Inquire(item)
+    case _ => log.warning("Unknown message")
   }
 }

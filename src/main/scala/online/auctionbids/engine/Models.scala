@@ -13,10 +13,13 @@ object AuctionStatus extends Enumeration {
 }
 
 abstract class Participant(name: String)
+
 case class Auctioneer(name: String) extends Participant(name)
+
 case class Bidder(name: String) extends Participant(name)
 
 case class Item(name: String, reservedPrice: Double = 0.0)
+
 case class Auction(item: Item,
                    auctioneer: Auctioneer,
                    status: AuctionStatus = AuctionStatus.NotStarted,
@@ -26,11 +29,13 @@ case class Auction(item: Item,
                    highestBidder: Option[Bidder] = None)
 
 object AuctionConfig {
-  final val AUCTION_DURATION                 = 5 //sec
-  final val AUCTION_START_DELAY              = 1000 //ms
-  final val AUCTION_CHECK_DELAY              = 500 //ms
-  final val BIDDER_TIME_TO_THINK_ABOUT_OFFER = 1000 //ms
+  final val AUCTION_DURATION                 = 5
+  final val AUCTION_START_DELAY              = 1000
+  final val AUCTION_CHECK_DELAY              = 500
+  final val BIDDER_TIME_TO_THINK_ABOUT_OFFER = 1000
+  final val MIN_BID_VALUE                    = 1
 }
+
 
 sealed trait AuctionMessage
 case class Add(item: Item, auctioneer : Auctioneer) extends AuctionMessage // Add Item for auction
@@ -44,4 +49,4 @@ case object NotFound extends AuctionReply // auction/item not found
 case class Status(auction: Auction) extends AuctionReply // auction replies the status
 case class Winner(auction: Auction) extends AuctionReply // Bidder is the auction winner
 case class BestOffer(auction: Auction) extends AuctionReply // Bidder has the best offer
-case class LowOffer(auction: Auction) extends AuctionReply // Bidder offer is low
+
