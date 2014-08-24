@@ -1,4 +1,4 @@
-# Online auction bid library #
+# Online auction bid library using Scala/Akka #
 
 A backend library for auction house for their online auction system so it supports the following operations (assuming that we have a in memory key-value store lib and a unique id generator available)
  
@@ -19,4 +19,5 @@ Software
 
 Steps to Run
 ------------
-- To run tests -> `sbt test`
+- To run simulation -> `sbt run`
+- To run unit tests -> `sbt test`
