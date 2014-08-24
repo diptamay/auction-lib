@@ -1,4 +1,4 @@
-# Online auction bid library using Scala/Akka #
+# A reactive online auction bid library using Scala/Akka #
 
 A backend library for auction house for their online auction system so it supports the following operations (assuming that we have a in memory key-value store lib and a unique id generator available)
  
@@ -16,6 +16,13 @@ Software
 --------
 - Scala (2.11.x)
 - SBT 
+- Akka (2.3.x)
+
+Features­
+--------
+- Completely event driven and reactive. Refer to `AuctionActor` as the core library representing the Auction Engine
+- Has a full fledged auction events simulation system kicked off by `AuctionRunner`, `BidderActor` and `AuctioneerActor`
+- Has a test class that runs tests. Refer to `AuctionActorSpec` under `test` 
 
 Steps to Run
 ------------
