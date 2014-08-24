@@ -11,7 +11,7 @@ case object BidItem
 
 class BidderActor(actorSystem: ActorSystem, bidder: Bidder, item: Item, maxBid: Double) extends Actor with ActorLogging {
 
-  val random       = new scala.util.Random
+  val random = new scala.util.Random
   val auctionActor = actorSystem.actorOf(Props[AuctionActor])
 
   def receive: Receive = {
@@ -33,6 +33,7 @@ class BidderActor(actorSystem: ActorSystem, bidder: Bidder, item: Item, maxBid: 
         context.stop(self)
       }
     case Status(auction) =>
+      log.info(s"State of auction is $auction")
       auction.status match {
         case AuctionStatus.NotStarted =>
           Thread.sleep(1 + random.nextInt(AuctionConfig.BIDDER_TIME_TO_THINK_ABOUT_OFFER))
@@ -41,7 +42,6 @@ class BidderActor(actorSystem: ActorSystem, bidder: Bidder, item: Item, maxBid: 
           val bidOffer = getBidOffer(auction)
           auctionActor ! Offer(auction.item, bidOffer, bidder)
         case _ =>
-          log.info(s"State of auction is $auction")
           context.stop(self)
       }
     case NotFound => context.stop(self)

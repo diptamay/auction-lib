@@ -9,19 +9,28 @@ import org.joda.time.{DateTime, Seconds}
  * @version 1.0
  */
 case object AuctionItem
+
 case object StartAuction
+
 case object CallAuction
 
 class AuctioneerActor(actorSystem: ActorSystem, auctioneer: Auctioneer, item: Item) extends Actor with ActorLogging {
 
-  val random       = new scala.util.Random
+  val random = new scala.util.Random
   val auctionActor = actorSystem.actorOf(Props[AuctionActor])
 
   def receive: Receive = {
-    case AuctionItem => auctionActor ! Add(item, auctioneer)
-    case StartAuction => auctionActor ! Start(item, auctioneer)
-    case CallAuction => auctionActor ! Call(item, auctioneer)
+    case AuctionItem =>
+      log.info(s"Auctioning Item $item")
+      auctionActor ! Add(item, auctioneer)
+    case StartAuction =>
+      log.info(s"Starting auction for Item $item")
+      auctionActor ! Start(item, auctioneer)
+    case CallAuction =>
+      log.info(s"Calling auction for Item $item")
+      auctionActor ! Call(item, auctioneer)
     case Status(auction) =>
+      log.info(s"State of auction is $auction")
       auction.status match {
         case AuctionStatus.NotStarted =>
           Thread.sleep(1 + random.nextInt(AuctionConfig.AUCTION_START_DELAY))
@@ -33,7 +42,6 @@ class AuctioneerActor(actorSystem: ActorSystem, auctioneer: Auctioneer, item: It
             auctionActor ! Inquire(auction.item)
           } else auctionActor ! Call(item, auctioneer)
         case _ =>
-          log.info(s"State of auction is $auction")
           context.stop(self)
       }
     case NotFound => context.stop(self)
