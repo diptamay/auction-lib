@@ -44,7 +44,7 @@ class BidderActor(actorSystem: ActorSystem, bidder: Bidder, item: Item, maxBid: 
         case _ =>
           context.stop(self)
       }
-    case NotFound => context.stop(self)
+    case NotFound => auctionActor ! Inquire(item, Option(bidder))
   }
 
   def getBidOffer(auction: Auction): Double = auction.highestBid.get + random.nextInt((maxBid - auction.highestBid.get).toInt)
