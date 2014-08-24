@@ -22,7 +22,7 @@ Features­
 --------
 - Completely event driven, reactive and thread safe. Refer to `AuctionActor` as the core library representing the Auction Engine
 - Has a full fledged auction events simulation system kicked off by `AuctionRunner`, `BidderActor` and `AuctioneerActor`
-- Has a test class that runs tests. Refer to `AuctionActorSpec` under `test` 
+- Has a test class that runs tests on `AuctionActor` using `akka-testkit`. Refer to `AuctionActorSpec` under `test` 
 
 Steps to Run
 ------------

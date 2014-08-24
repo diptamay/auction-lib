@@ -1,6 +1,7 @@
 package online.auctionbids
 
 import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
+import online.auctionbids.engine.AuctionStatus._
 import online.auctionbids.engine._
 
 /**
@@ -25,12 +26,12 @@ class BidderActor(actorSystem: ActorSystem, bidder: Bidder, item: Item, maxBid: 
       auctionActor ! Inquire(auction.item, Option(bidder))
     case Status(auction) =>
       auction.status match {
-        case AuctionStatus.NotStarted =>
+        case NotStarted =>
           Thread.sleep(1 + random.nextInt(AuctionConfig.BIDDER_TIME_TO_THINK_ABOUT_OFFER))
           val item = auction.item
           log.info(s"$bidder inquiring for $item")
           auctionActor ! Inquire(item, Option(bidder))
-        case AuctionStatus.Running =>
+        case Running =>
           val bidOffer = getBidOffer(auction)
           log.info(s"$bidder bidding for $auction with offer $bidOffer")
           auctionActor ! Offer(auction.item, bidOffer, bidder)

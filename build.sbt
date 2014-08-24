@@ -8,6 +8,7 @@ scalaVersion := "2.11.2"
 
 libraryDependencies ++= Seq(
   "com.typesafe.akka" %% "akka-actor" % "2.3.5" withSources() withJavadoc(),
+  "com.typesafe.akka" %% "akka-testkit" % "2.3.5" % "test" withSources() withJavadoc(),
   "org.scalatest" % "scalatest_2.11" % "2.2.1" % "test" withSources() withJavadoc(),
   "joda-time" % "joda-time"    % "2.4"
 )

@@ -1,6 +1,7 @@
 package online.auctionbids
 
 import akka.actor.{Actor, ActorLogging, ActorSystem, Props}
+import online.auctionbids.engine.AuctionStatus._
 import online.auctionbids.engine._
 import org.joda.time.{DateTime, Seconds}
 
@@ -31,11 +32,11 @@ class AuctioneerActor(actorSystem: ActorSystem, auctioneer: Auctioneer, item: It
       auctionActor ! Call(item, auctioneer)
     case Status(auction) =>
       auction.status match {
-        case AuctionStatus.NotStarted =>
+        case NotStarted =>
           Thread.sleep(1 + random.nextInt(AuctionConfig.AUCTION_START_DELAY))
           log.info(s"$auctioneer starting auction for $item")
           auctionActor ! Start(item, auctioneer)
-        case AuctionStatus.Running =>
+        case Running =>
           val seconds = Seconds.secondsBetween(DateTime.now(), auction.startedAt.get).getSeconds
           if (seconds < AuctionConfig.AUCTION_DURATION) {
             Thread.sleep(1 + random.nextInt(AuctionConfig.AUCTION_CHECK_DELAY))
