@@ -28,11 +28,10 @@ class AuctionActorSpec extends TestKit(ActorSystem("testSystem")) with WordSpecL
     "add item to auctions" in {
       auctionActorRef ? Add(item1, auctioneer1) map {
         case Status(auction) =>
-          //println(s"Got auction status $auction")
           assert(auction.status == NotStarted)
           assert(auction.item == item1)
           assert(auction.auctioneer == auctioneer1)
-        case _ => assert(false)
+        case _ => fail()
       }
     }
   }
@@ -41,10 +40,9 @@ class AuctionActorSpec extends TestKit(ActorSystem("testSystem")) with WordSpecL
     "start auction" in {
       auctionActorRef ? Start(item1, auctioneer1) map {
         case Status(auction) =>
-          //println(s"Got auction status $auction")
           assert(auction.status == Running)
           assert(auction.startedAt != None)
-        case _ => assert(false)
+        case _ => fail()
       }
     }
   }
@@ -53,12 +51,11 @@ class AuctionActorSpec extends TestKit(ActorSystem("testSystem")) with WordSpecL
     "inquire valid auction and get back status" in {
       auctionActorRef ? Inquire(item1) map {
         case Status(auction) =>
-          //println(s"Got auction status $auction")
           assert(auction.status == Running)
           assert(auction.highestBid == None)
           assert(auction.highestBidder == None)
           assert(auction.closedAt == None)
-        case _ => assert(false)
+        case _ => fail()
       }
     }
   }
@@ -67,12 +64,11 @@ class AuctionActorSpec extends TestKit(ActorSystem("testSystem")) with WordSpecL
     "inquire valid auction and get back status" in {
       auctionActorRef ? Inquire(item1, Option(bidder1)) map {
         case Status(auction) =>
-          //println(s"Got auction status $auction")
           assert(auction.status == Running)
           assert(auction.highestBid == None)
           assert(auction.highestBidder == None)
           assert(auction.closedAt == None)
-        case _ => assert(false)
+        case _ => fail()
       }
     }
   }
@@ -81,12 +77,11 @@ class AuctionActorSpec extends TestKit(ActorSystem("testSystem")) with WordSpecL
     "call auction" in {
       auctionActorRef ? Call(item1, auctioneer1) map {
         case Status(auction) =>
-          //println(s"Got auction status $auction")
           assert(auction.status == Failed)
           assert(auction.highestBid == None)
           assert(auction.highestBidder == None)
           assert(auction.closedAt != None)
-        case _ => assert(false)
+        case _ => fail()
       }
     }
   }
@@ -95,12 +90,11 @@ class AuctionActorSpec extends TestKit(ActorSystem("testSystem")) with WordSpecL
     "inquire concluded auction and get back status" in {
       auctionActorRef ? Inquire(item1, Option(bidder1)) map {
         case Status(auction) =>
-          //println(s"Got auction status $auction")
           assert(auction.status == Failed)
           assert(auction.highestBid == None)
           assert(auction.highestBidder == None)
           assert(auction.closedAt != None)
-        case _ => assert(false)
+        case _ => fail()
       }
     }
   }
@@ -108,8 +102,8 @@ class AuctionActorSpec extends TestKit(ActorSystem("testSystem")) with WordSpecL
   "Auctioneer" should {
     "inquire invalid auction and get back not found" in {
       auctionActorRef ? Inquire(item2) map {
-        case NotFound => assert(true)
-        case _ => assert(false)
+        case NotFound =>
+        case _ => fail()
       }
     }
   }
@@ -117,8 +111,8 @@ class AuctionActorSpec extends TestKit(ActorSystem("testSystem")) with WordSpecL
   "Bidder" should {
     "inquire invalid auction and get back not found" in {
       auctionActorRef ? Inquire(item2, Option(bidder1)) map {
-        case NotFound => assert(true)
-        case _ => assert(false)
+        case NotFound =>
+        case _ => fail()
       }
     }
   }
@@ -127,11 +121,10 @@ class AuctionActorSpec extends TestKit(ActorSystem("testSystem")) with WordSpecL
     "not be able to add already auction item" in {
       auctionActorRef ? Add(item1, auctioneer1) map {
         case Status(auction) =>
-          //println(s"Got auction status $auction")
           assert(auction.status != NotStarted)
           assert(auction.item == item1)
           assert(auction.auctioneer == auctioneer1)
-        case _ => assert(false)
+        case _ => fail()
       }
     }
   }
@@ -140,11 +133,10 @@ class AuctionActorSpec extends TestKit(ActorSystem("testSystem")) with WordSpecL
     "be able to add another item for auctions" in {
       auctionActorRef ? Add(item2, auctioneer1) map {
         case Status(auction) =>
-          //println(s"Got auction status $auction")
           assert(auction.status == NotStarted)
           assert(auction.item == item2)
           assert(auction.auctioneer == auctioneer1)
-        case _ => assert(false)
+        case _ => fail()
       }
     }
   }
@@ -155,7 +147,7 @@ class AuctionActorSpec extends TestKit(ActorSystem("testSystem")) with WordSpecL
         case Status(auction) =>
           assert(auction.status == Running)
           assert(auction.startedAt != None)
-        case _ => assert(false)
+        case _ => fail()
       }
     }
   }
@@ -167,7 +159,7 @@ class AuctionActorSpec extends TestKit(ActorSystem("testSystem")) with WordSpecL
           assert(auction.status == Running)
           assert(auction.startedAt != None)
           assert(auction.highestBidder.get == bidder1)
-        case _ => assert(false)
+        case _ => fail()
       }
     }
   }
@@ -177,7 +169,7 @@ class AuctionActorSpec extends TestKit(ActorSystem("testSystem")) with WordSpecL
       auctionActorRef ? Offer(item2, item2.reservedPrice + 1, bidder2) map {
         case BestOffer(auction) =>
           assert(auction.highestBidder.get == bidder2)
-        case _ => assert(false)
+        case _ => fail()
       }
     }
   }
@@ -188,7 +180,29 @@ class AuctionActorSpec extends TestKit(ActorSystem("testSystem")) with WordSpecL
         case Status(auction) =>
           assert(auction.status == Running)
           assert(auction.highestBidder.get != bidder1)
-        case _ => assert(false)
+        case _ => fail()
+      }
+    }
+  }
+
+  "Auctioneer" should {
+    "not be able to start invalid auction" in {
+      auctionActorRef ? Start(item3, auctioneer1) map {
+        case NotFound =>
+        case _ => fail()
+      }
+    }
+  }
+
+  "Auctioneer" should {
+    "be able to add more item for auctions" in {
+      auctionActorRef ? Add(item3, auctioneer1) map {
+        case Status(auction) =>
+          //println(s"Got auction status $auction")
+          assert(auction.status == NotStarted)
+          assert(auction.item == item3)
+          assert(auction.auctioneer == auctioneer1)
+        case _ => fail()
       }
     }
   }
@@ -197,9 +211,11 @@ class AuctionActorSpec extends TestKit(ActorSystem("testSystem")) with WordSpecL
     "be able to start another active auction" in {
       auctionActorRef ? Start(item3, auctioneer1) map {
         case Status(auction) =>
+          //println(s"Got auction status $auction")
           assert(auction.status == Running)
+          assert(auction.item == item3)
           assert(auction.startedAt != None)
-        case _ => assert(false)
+        case _ => fail()
       }
     }
   }
@@ -211,7 +227,7 @@ class AuctionActorSpec extends TestKit(ActorSystem("testSystem")) with WordSpecL
           assert(auction.status == Running)
           assert(auction.startedAt != None)
           assert(auction.highestBidder.get == bidder1)
-        case _ => assert(false)
+        case _ => fail()
       }
     }
   }
@@ -223,7 +239,7 @@ class AuctionActorSpec extends TestKit(ActorSystem("testSystem")) with WordSpecL
           assert(auction.status == Running)
           assert(auction.highestBidder.get == bidder1)
           assert(auction.highestBidder.get != bidder2)
-        case _ => assert(false)
+        case _ => fail()
       }
     }
   }
@@ -236,7 +252,7 @@ class AuctionActorSpec extends TestKit(ActorSystem("testSystem")) with WordSpecL
           assert(auction.highestBid != None)
           assert(auction.highestBidder.get == bidder2)
           assert(auction.closedAt != None)
-        case _ => assert(false)
+        case _ => fail()
       }
     }
   }
@@ -249,7 +265,7 @@ class AuctionActorSpec extends TestKit(ActorSystem("testSystem")) with WordSpecL
           assert(auction.highestBid != None)
           assert(auction.highestBidder.get == bidder1)
           assert(auction.closedAt != None)
-        case _ => assert(false)
+        case _ => fail()
       }
     }
   }
@@ -260,7 +276,7 @@ class AuctionActorSpec extends TestKit(ActorSystem("testSystem")) with WordSpecL
         case Winner(auction) =>
           assert(auction.status == Succeeded)
           assert(auction.highestBidder.get == bidder1)
-        case _ => assert(false)
+        case _ => fail()
       }
     }
   }
@@ -271,7 +287,7 @@ class AuctionActorSpec extends TestKit(ActorSystem("testSystem")) with WordSpecL
         case Winner(auction) =>
           assert(auction.status == Succeeded)
           assert(auction.highestBidder.get == bidder2)
-        case _ => assert(false)
+        case _ => fail()
       }
     }
   }
